@@ -16,41 +16,70 @@ YouTube Channel → Video Descriptions + Transcripts → Gemini AI Extraction �
 
 ## Setup
 
-### 1. Install dependencies
+### 1. Install Python
+
+Make sure you have Python 3.11+ installed:
+- **Mac**: `brew install python` (or download from [python.org](https://www.python.org/downloads/))
+- **Windows**: Download from [python.org](https://www.python.org/downloads/) — check "Add to PATH" during install
+- **Linux**: `sudo apt install python3 python3-venv`
+
+### 2. Install dependencies
+
+Open a terminal in the project folder and run:
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
 ```
 
-### 2. Configure API keys
+This creates an isolated environment so packages don't conflict with your system. Then install everything:
+
+```bash
+# Mac / Linux
+.venv/bin/pip install -r requirements.txt
+
+# Windows
+.venv\Scripts\pip install -r requirements.txt
+```
+
+### 3. Configure API keys
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your keys:
+Edit the `.env` file and add your keys:
 
 - **`YOUTUBE_API_KEY`** (required): Get one at [Google Cloud Console](https://console.cloud.google.com/apis/credentials) — enable "YouTube Data API v3"
 - **`GEMINI_API_KEY`** (required): Get one at [Google AI Studio](https://aistudio.google.com/apikey) — generous free tier included
 - **`GOOGLE_GEOCODING_API_KEY`** (optional): For more accurate geocoding. Without it, the free Nominatim service is used.
 
-### 3. Run
+### 4. Run
 
 ```bash
-# Full pipeline (all videos — may take a while and use API credits)
-python main.py
+# Mac / Linux
+.venv/bin/python main.py --max-videos 5
 
-# Test with just 5 videos first
-python main.py --max-videos 5
-
-# Skip transcripts (faster, uses only video descriptions)
-python main.py --skip-transcripts
-
-# Force re-fetch (ignore cache)
-python main.py --no-cache
+# Windows
+.venv\Scripts\python main.py --max-videos 5
 ```
 
-### 4. Import into Google My Maps
+Start with `--max-videos 5` to test, then run without it to process all videos:
+
+```bash
+.venv/bin/python main.py
+```
+
+Other options:
+
+```bash
+# Skip transcripts (faster, uses only video descriptions)
+.venv/bin/python main.py --skip-transcripts
+
+# Force re-fetch (ignore cache)
+.venv/bin/python main.py --no-cache
+```
+
+### 5. Import into Google My Maps
 
 1. Go to [Google My Maps](https://www.google.com/maps/d/)
 2. Create a new map
