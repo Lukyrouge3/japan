@@ -133,11 +133,13 @@ def scrape_channel(
         List of video dicts with keys: video_id, title, description,
         published_at, url, transcript
     """
-    # Check cache first
+    # Load partial cache if it exists (resume support)
+    cached_videos = {}
     if cache_path and Path(cache_path).exists():
-        print(f"Loading cached data from {cache_path}")
         with open(cache_path) as f:
-            return json.load(f)
+            for v in json.load(f):
+                cached_videos[v["video_id"]] = v
+        print(f"Loaded {len(cached_videos)} cached videos from {cache_path}")
 
     youtube = get_youtube_client(api_key)
 
@@ -158,30 +160,50 @@ def scrape_channel(
         video_ids = video_ids[:max_videos]
         print(f"  Limited to {max_videos} videos")
 
-    # Fetch video details
-    print("Fetching video details...")
-    videos = fetch_video_details(youtube, video_ids)
+    # Fetch video details (only for uncached videos)
+    uncached_ids = [vid for vid in video_ids if vid not in cached_videos]
+    if uncached_ids:
+        print(f"Fetching details for {len(uncached_ids)} new videos...")
+        new_videos = fetch_video_details(youtube, uncached_ids)
+        for v in new_videos:
+            cached_videos[v["video_id"]] = v
+    else:
+        print("All video details already cached")
 
-    # Fetch transcripts
+    # Build ordered list from video_ids
+    videos = [cached_videos[vid] for vid in video_ids if vid in cached_videos]
+
+    # Fetch transcripts (skip videos that already have one)
     if include_transcripts:
         print("Fetching transcripts...")
         for i, video in enumerate(videos):
+            if "transcript" in video:
+                print(f"  [{i + 1}/{len(videos)}] {video['title'][:60]}... (cached)")
+                continue
             print(f"  [{i + 1}/{len(videos)}] {video['title'][:60]}...")
             video["transcript"] = fetch_transcript(video["video_id"])
-            # Be nice to the API
+            # Save after each transcript so progress isn't lost
+            if cache_path:
+                _save_cache(cache_path, videos)
             time.sleep(0.5)
     else:
         for video in videos:
-            video["transcript"] = None
+            if "transcript" not in video:
+                video["transcript"] = None
 
-    # Cache results
+    # Final cache save
     if cache_path:
-        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_path, "w") as f:
-            json.dump(videos, f, ensure_ascii=False, indent=2)
+        _save_cache(cache_path, videos)
         print(f"Cached {len(videos)} videos to {cache_path}")
 
     return videos
+
+
+def _save_cache(cache_path: str, data: list[dict]):
+    """Save data to cache file."""
+    Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":

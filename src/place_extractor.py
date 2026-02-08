@@ -130,17 +130,31 @@ def extract_places_from_videos(
     Returns:
         List of all extracted place dicts
     """
-    # Check cache
-    if cache_path:
-        from pathlib import Path
-        if Path(cache_path).exists():
-            print(f"Loading cached places from {cache_path}")
-            with open(cache_path) as f:
-                return json.load(f)
+    from pathlib import Path
+
+    # Load partial cache: a dict of video_id -> list of places already extracted
+    cached_by_video = {}
+    if cache_path and Path(cache_path).exists():
+        with open(cache_path) as f:
+            for place in json.load(f):
+                src = place.get("source_video", {})
+                vid_url = src.get("url", "")
+                if vid_url:
+                    cached_by_video.setdefault(vid_url, []).append(place)
+        print(f"Loaded cached places for {len(cached_by_video)} videos from {cache_path}")
 
     all_places = []
 
     for i, video in enumerate(videos):
+        video_url = video.get("url", "")
+
+        # Skip if already extracted
+        if video_url in cached_by_video:
+            places = cached_by_video[video_url]
+            print(f"[{i + 1}/{len(videos)}] {video['title'][:60]}... ({len(places)} places cached)")
+            all_places.extend(places)
+            continue
+
         print(f"[{i + 1}/{len(videos)}] Extracting places from: {video['title'][:60]}...")
 
         places = extract_places_from_video(video, api_key=api_key, model=model)
@@ -148,36 +162,46 @@ def extract_places_from_videos(
 
         all_places.extend(places)
 
-    # Deduplicate by name + city
+        # Save after each video so progress isn't lost
+        if cache_path:
+            _save_places_cache(cache_path, _deduplicate(all_places))
+
+    unique_places = _deduplicate(all_places)
+    print(f"\nTotal: {len(all_places)} place mentions -> {len(unique_places)} unique places")
+
+    if cache_path:
+        _save_places_cache(cache_path, unique_places)
+        print(f"Cached {len(unique_places)} places to {cache_path}")
+
+    return unique_places
+
+
+def _deduplicate(places: list[dict]) -> list[dict]:
+    """Deduplicate places by name + city, merging video sources."""
     seen = set()
-    unique_places = []
-    for place in all_places:
+    unique = []
+    for place in places:
         dedup_key = (place.get("name", "").lower(), place.get("city", "").lower())
         if dedup_key not in seen:
             seen.add(dedup_key)
-            unique_places.append(place)
+            unique.append(place)
         else:
-            # Merge: keep the one with more info, add video source
-            for existing in unique_places:
+            for existing in unique:
                 existing_key = (existing.get("name", "").lower(), existing.get("city", "").lower())
                 if existing_key == dedup_key:
-                    # Add this video as an additional source
                     if "additional_sources" not in existing:
                         existing["additional_sources"] = []
                     existing["additional_sources"].append(place.get("source_video", {}))
                     break
+    return unique
 
-    print(f"\nTotal: {len(all_places)} place mentions -> {len(unique_places)} unique places")
 
-    # Cache results
-    if cache_path:
-        from pathlib import Path
-        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_path, "w") as f:
-            json.dump(unique_places, f, ensure_ascii=False, indent=2)
-        print(f"Cached {len(unique_places)} places to {cache_path}")
-
-    return unique_places
+def _save_places_cache(cache_path: str, places: list[dict]):
+    """Save places to cache file."""
+    from pathlib import Path
+    Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w") as f:
+        json.dump(places, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
