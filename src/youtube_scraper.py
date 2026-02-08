@@ -7,7 +7,8 @@ import json
 import time
 from pathlib import Path
 from googleapiclient.discovery import build
-from youtube_transcript_api import YouTubeTranscriptApi
+import subprocess
+import tempfile
 
 
 def get_youtube_client(api_key: str | None = None):
@@ -94,20 +95,69 @@ def fetch_video_details(youtube, video_ids: list[str]) -> list[dict]:
     return videos
 
 
-def fetch_transcript(video_id: str, languages: list[str] | None = None) -> str | None:
-    """Fetch transcript for a video. Returns None if unavailable."""
+def fetch_transcript(
+    video_id: str,
+    languages: list[str] | None = None,
+    cookies_browser: str | None = None,
+) -> str | None:
+    """Fetch transcript for a video using yt-dlp. Returns None if unavailable."""
     if languages is None:
         languages = ["fr", "en", "ja"]
 
-    try:
-        ytt = YouTubeTranscriptApi()
-        entries = ytt.fetch(video_id, languages=languages)
-        full_text = " ".join(entry.text for entry in entries)
-        return full_text
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    sub_langs = ",".join(languages)
 
-    except Exception as e:
-        print(f"  Could not fetch transcript for {video_id}: {e}")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_template = os.path.join(tmpdir, "sub")
+        cmd = [
+            "yt-dlp",
+            "--skip-download",
+            "--write-subs",
+            "--write-auto-subs",
+            "--sub-langs", sub_langs,
+            "--sub-format", "json3",
+            "--output", out_template,
+            "--no-warnings",
+            "--quiet",
+        ]
+        if cookies_browser:
+            cmd.extend(["--cookies-from-browser", cookies_browser])
+        cmd.append(url)
+
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=30, check=False)
+        except subprocess.TimeoutExpired:
+            print(f"    yt-dlp timed out for {video_id}")
+            return None
+
+        # Look for downloaded subtitle files (yt-dlp names them sub.LANG.json3)
+        for lang in languages:
+            sub_file = Path(tmpdir) / f"sub.{lang}.json3"
+            if sub_file.exists():
+                return _parse_json3_subs(sub_file)
+
+        # Fallback: check for any subtitle file
+        for f in Path(tmpdir).glob("sub.*.json3"):
+            return _parse_json3_subs(f)
+
+        print(f"    No subtitles found for {video_id}")
         return None
+
+
+def _parse_json3_subs(path: Path) -> str:
+    """Parse a json3 subtitle file into plain text."""
+    with open(path) as f:
+        data = json.load(f)
+
+    texts = []
+    for event in data.get("events", []):
+        segs = event.get("segs")
+        if segs:
+            line = "".join(seg.get("utf8", "") for seg in segs).strip()
+            if line and line != "\n":
+                texts.append(line)
+
+    return " ".join(texts)
 
 
 def scrape_channel(
@@ -117,6 +167,7 @@ def scrape_channel(
     include_transcripts: bool = True,
     max_videos: int | None = None,
     cache_path: str | None = None,
+    cookies_browser: str | None = None,
 ) -> list[dict]:
     """
     Main function: scrape all videos from a channel.
@@ -128,6 +179,7 @@ def scrape_channel(
         include_transcripts: Whether to also fetch transcripts
         max_videos: Limit number of videos (for testing)
         cache_path: Path to cache results as JSON
+        cookies_browser: Browser name for yt-dlp cookies (e.g. "chrome", "firefox")
 
     Returns:
         List of video dicts with keys: video_id, title, description,
@@ -181,7 +233,7 @@ def scrape_channel(
                 print(f"  [{i + 1}/{len(videos)}] {video['title'][:60]}... (cached)")
                 continue
             print(f"  [{i + 1}/{len(videos)}] {video['title'][:60]}...")
-            video["transcript"] = fetch_transcript(video["video_id"])
+            video["transcript"] = fetch_transcript(video["video_id"], cookies_browser=cookies_browser)
             # Save after each transcript so progress isn't lost
             if cache_path:
                 _save_cache(cache_path, videos)

@@ -58,6 +58,12 @@ def main():
         help="Gemini model to use for extraction (default: gemini-2.0-flash)",
     )
     parser.add_argument(
+        "--cookies-browser",
+        default=None,
+        help="Browser to grab YouTube cookies from (e.g. chrome, firefox, brave, edge). "
+        "Helps avoid IP blocks when fetching transcripts.",
+    )
+    parser.add_argument(
         "--output-dir",
         default=OUTPUT_DIR,
         help=f"Output directory (default: {OUTPUT_DIR})",
@@ -82,6 +88,7 @@ def main():
         include_transcripts=not args.skip_transcripts,
         max_videos=args.max_videos,
         cache_path=videos_cache,
+        cookies_browser=args.cookies_browser,
     )
 
     # Apply max_videos limit (cache may contain more from previous runs)
