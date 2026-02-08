@@ -83,6 +83,11 @@ def main():
         max_videos=args.max_videos,
         cache_path=videos_cache,
     )
+
+    # Apply max_videos limit (cache may contain more from previous runs)
+    if args.max_videos:
+        videos = videos[: args.max_videos]
+
     print(f"\n-> {len(videos)} videos fetched\n")
 
     # ── Step 2: Extract places using Gemini ─────────────────────────
