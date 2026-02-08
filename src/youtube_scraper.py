@@ -1,0 +1,225 @@
+"""
+Fetch all videos from a YouTube channel, including descriptions and transcripts.
+"""
+
+import os
+import json
+import time
+from pathlib import Path
+from googleapiclient.discovery import build
+from youtube_transcript_api import YouTubeTranscriptApi
+
+
+def get_youtube_client(api_key: str | None = None):
+    """Create a YouTube Data API client."""
+    key = api_key or os.getenv("YOUTUBE_API_KEY")
+    if not key:
+        raise ValueError("YOUTUBE_API_KEY is required. Set it in .env or pass it directly.")
+    return build("youtube", "v3", developerKey=key)
+
+
+def get_channel_id_from_handle(youtube, handle: str) -> str:
+    """Resolve a @handle to a channel ID."""
+    # Remove @ prefix if present
+    handle = handle.lstrip("@")
+    request = youtube.search().list(
+        part="snippet",
+        q=handle,
+        type="channel",
+        maxResults=1,
+    )
+    response = request.execute()
+    if response["items"]:
+        return response["items"][0]["snippet"]["channelId"]
+    raise ValueError(f"Could not find channel for handle: @{handle}")
+
+
+def fetch_all_video_ids(youtube, channel_id: str) -> list[str]:
+    """Fetch all video IDs from a channel using the uploads playlist."""
+    # Get the uploads playlist ID
+    request = youtube.channels().list(part="contentDetails", id=channel_id)
+    response = request.execute()
+
+    if not response["items"]:
+        raise ValueError(f"Channel {channel_id} not found")
+
+    uploads_playlist_id = response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+
+    video_ids = []
+    next_page_token = None
+
+    while True:
+        request = youtube.playlistItems().list(
+            part="contentDetails",
+            playlistId=uploads_playlist_id,
+            maxResults=50,
+            pageToken=next_page_token,
+        )
+        response = request.execute()
+
+        for item in response["items"]:
+            video_ids.append(item["contentDetails"]["videoId"])
+
+        next_page_token = response.get("nextPageToken")
+        if not next_page_token:
+            break
+
+    return video_ids
+
+
+def fetch_video_details(youtube, video_ids: list[str]) -> list[dict]:
+    """Fetch title, description, and publish date for a batch of video IDs."""
+    videos = []
+
+    # YouTube API allows max 50 IDs per request
+    for i in range(0, len(video_ids), 50):
+        batch = video_ids[i : i + 50]
+        request = youtube.videos().list(
+            part="snippet",
+            id=",".join(batch),
+        )
+        response = request.execute()
+
+        for item in response["items"]:
+            videos.append(
+                {
+                    "video_id": item["id"],
+                    "title": item["snippet"]["title"],
+                    "description": item["snippet"]["description"],
+                    "published_at": item["snippet"]["publishedAt"],
+                    "url": f"https://www.youtube.com/watch?v={item['id']}",
+                }
+            )
+
+    return videos
+
+
+def fetch_transcript(video_id: str, languages: list[str] | None = None) -> str | None:
+    """Fetch transcript for a video. Returns None if unavailable."""
+    if languages is None:
+        languages = ["fr", "en", "ja"]
+
+    try:
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+        # Try to find a transcript in preferred languages
+        transcript = None
+        for lang in languages:
+            try:
+                transcript = transcript_list.find_transcript([lang])
+                break
+            except Exception:
+                continue
+
+        # Fall back to any available transcript
+        if transcript is None:
+            try:
+                transcript = transcript_list.find_generated_transcript(languages)
+            except Exception:
+                # Get whatever is available
+                for t in transcript_list:
+                    transcript = t
+                    break
+
+        if transcript is None:
+            return None
+
+        entries = transcript.fetch()
+        # Combine all text entries into a single string
+        full_text = " ".join(entry.text for entry in entries)
+        return full_text
+
+    except Exception as e:
+        print(f"  Could not fetch transcript for {video_id}: {e}")
+        return None
+
+
+def scrape_channel(
+    channel_id: str | None = None,
+    handle: str | None = None,
+    api_key: str | None = None,
+    include_transcripts: bool = True,
+    max_videos: int | None = None,
+    cache_path: str | None = None,
+) -> list[dict]:
+    """
+    Main function: scrape all videos from a channel.
+
+    Args:
+        channel_id: YouTube channel ID (e.g. UCbRFfPqfBHqoz2ABGPDSgLg)
+        handle: YouTube handle (e.g. @TevLouis) - used if channel_id not provided
+        api_key: YouTube Data API key (falls back to env var)
+        include_transcripts: Whether to also fetch transcripts
+        max_videos: Limit number of videos (for testing)
+        cache_path: Path to cache results as JSON
+
+    Returns:
+        List of video dicts with keys: video_id, title, description,
+        published_at, url, transcript
+    """
+    # Check cache first
+    if cache_path and Path(cache_path).exists():
+        print(f"Loading cached data from {cache_path}")
+        with open(cache_path) as f:
+            return json.load(f)
+
+    youtube = get_youtube_client(api_key)
+
+    # Resolve handle to channel ID if needed
+    if not channel_id:
+        if not handle:
+            raise ValueError("Either channel_id or handle must be provided")
+        print(f"Resolving handle @{handle}...")
+        channel_id = get_channel_id_from_handle(youtube, handle)
+        print(f"  -> Channel ID: {channel_id}")
+
+    # Fetch all video IDs
+    print(f"Fetching video list for channel {channel_id}...")
+    video_ids = fetch_all_video_ids(youtube, channel_id)
+    print(f"  Found {len(video_ids)} videos")
+
+    if max_videos:
+        video_ids = video_ids[:max_videos]
+        print(f"  Limited to {max_videos} videos")
+
+    # Fetch video details
+    print("Fetching video details...")
+    videos = fetch_video_details(youtube, video_ids)
+
+    # Fetch transcripts
+    if include_transcripts:
+        print("Fetching transcripts...")
+        for i, video in enumerate(videos):
+            print(f"  [{i + 1}/{len(videos)}] {video['title'][:60]}...")
+            video["transcript"] = fetch_transcript(video["video_id"])
+            # Be nice to the API
+            time.sleep(0.5)
+    else:
+        for video in videos:
+            video["transcript"] = None
+
+    # Cache results
+    if cache_path:
+        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "w") as f:
+            json.dump(videos, f, ensure_ascii=False, indent=2)
+        print(f"Cached {len(videos)} videos to {cache_path}")
+
+    return videos
+
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    videos = scrape_channel(
+        handle="TevLouis",
+        include_transcripts=True,
+        max_videos=5,  # Start small for testing
+        cache_path="output/videos_cache.json",
+    )
+
+    for v in videos:
+        has_transcript = "yes" if v["transcript"] else "no"
+        print(f"  {v['title'][:70]} | transcript: {has_transcript}")
