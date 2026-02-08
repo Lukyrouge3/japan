@@ -100,32 +100,8 @@ def fetch_transcript(video_id: str, languages: list[str] | None = None) -> str |
         languages = ["fr", "en", "ja"]
 
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-
-        # Try to find a transcript in preferred languages
-        transcript = None
-        for lang in languages:
-            try:
-                transcript = transcript_list.find_transcript([lang])
-                break
-            except Exception:
-                continue
-
-        # Fall back to any available transcript
-        if transcript is None:
-            try:
-                transcript = transcript_list.find_generated_transcript(languages)
-            except Exception:
-                # Get whatever is available
-                for t in transcript_list:
-                    transcript = t
-                    break
-
-        if transcript is None:
-            return None
-
-        entries = transcript.fetch()
-        # Combine all text entries into a single string
+        ytt = YouTubeTranscriptApi()
+        entries = ytt.fetch(video_id, languages=languages)
         full_text = " ".join(entry.text for entry in entries)
         return full_text
 
