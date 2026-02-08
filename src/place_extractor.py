@@ -181,13 +181,13 @@ def _deduplicate(places: list[dict]) -> list[dict]:
     seen = set()
     unique = []
     for place in places:
-        dedup_key = (place.get("name", "").lower(), place.get("city", "").lower())
+        dedup_key = ((place.get("name") or "").lower(), (place.get("city") or "").lower())
         if dedup_key not in seen:
             seen.add(dedup_key)
             unique.append(place)
         else:
             for existing in unique:
-                existing_key = (existing.get("name", "").lower(), existing.get("city", "").lower())
+                existing_key = ((existing.get("name") or "").lower(), (existing.get("city") or "").lower())
                 if existing_key == dedup_key:
                     if "additional_sources" not in existing:
                         existing["additional_sources"] = []
