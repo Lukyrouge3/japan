@@ -31,7 +31,7 @@ Pour chaque lieu, donne :
 4. **address** : L'adresse exacte si mentionnée dans la description ou la transcription
 5. **city** : La ville (Tokyo, Osaka, Kyoto, etc.)
 6. **area** : Le quartier si mentionné (Shibuya, Shinjuku, Asakusa, etc.)
-7. **rating** : L'avis général de Tev et Louis (très positif / positif / neutre / négatif / très négatif)
+7. **rating** : Une note de 1 à 10 reflétant l'avis de Tev et Louis (1 = ils ont détesté, 5 = neutre/pas d'avis marqué, 10 = coup de cœur absolu). Déduis la note à partir de leur ton, leurs mots et leur enthousiasme
 8. **summary** : Un résumé en 1-2 phrases de ce qu'ils en ont dit
 9. **quotes** : 1-2 citations courtes marquantes de la vidéo sur ce lieu (en français)
 10. **price_range** : Fourchette de prix si mentionnée (€, €€, €€€, €€€€)

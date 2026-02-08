@@ -39,13 +39,16 @@ TYPE_ICONS = {
     "hôtel": "🏨",
 }
 
-RATING_EMOJI = {
-    "très positif": "⭐⭐⭐",
-    "positif": "⭐⭐",
-    "neutre": "⭐",
-    "négatif": "👎",
-    "très négatif": "👎👎",
-}
+def rating_to_stars(rating) -> str:
+    """Convert a 1-10 numeric rating to a star display."""
+    try:
+        score = int(rating)
+    except (TypeError, ValueError):
+        return ""
+    score = max(1, min(10, score))
+    full = score // 2
+    half = score % 2
+    return "⭐" * full + ("½" if half else "")
 
 
 def get_geocoder(google_api_key: str | None = None):
@@ -138,9 +141,9 @@ def build_description(place: dict) -> str:
     icon = TYPE_ICONS.get(place_type, "📍")
     parts.append(f"{icon} {place_type.capitalize()}")
 
-    if place.get("rating"):
-        emoji = RATING_EMOJI.get(place["rating"], "")
-        parts.append(f"Avis: {place['rating']} {emoji}")
+    if place.get("rating") is not None:
+        stars = rating_to_stars(place["rating"])
+        parts.append(f"Note: {place['rating']}/10 {stars}")
 
     if place.get("summary"):
         parts.append(f"\n{place['summary']}")
