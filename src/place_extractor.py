@@ -22,7 +22,7 @@ Voici les informations d'une vidéo de la chaîne "Tev & Louis" :
 
 ---
 
-Analyse ces informations et extrais TOUS les lieux mentionnés (restaurants, cafés, temples, parcs, magasins, quartiers remarquables, attractions, etc.).
+Analyse ces informations et extrais TOUS les lieux visités (restaurants, cafés, temples, parcs, magasins, quartiers remarquables, attractions, etc.).
 
 Pour chaque lieu, donne :
 1. **name** : Le nom du lieu (en japonais si possible, sinon en français/anglais)
@@ -40,13 +40,12 @@ Pour chaque lieu, donne :
 IMPORTANT :
 - N'extrais que les lieux réels et spécifiques, pas les mentions génériques
 - Si l'adresse est dans la description, copie-la exactement
-- Si le lieu est juste mentionné en passant sans vraie recommandation, inclus-le quand même mais note-le
+- Si le lieu est juste mentionné en passant sans vraie recommandation, ne l'inclus pas.
 - Réponds UNIQUEMENT en JSON valide, sous forme d'un tableau d'objets
 - Si aucun lieu n'est trouvé, réponds avec un tableau vide []
 
 Réponds avec le JSON uniquement, sans markdown ni commentaires :
 """
-
 
 def extract_places_from_video(
     video: dict,
