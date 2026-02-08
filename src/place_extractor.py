@@ -1,10 +1,11 @@
 """
-Use Claude to extract place information from video descriptions and transcripts.
+Use Google Gemini to extract place information from video descriptions and transcripts.
 """
 
 import os
 import json
-import anthropic
+import re
+from google import genai
 
 EXTRACTION_PROMPT = """\
 Tu es un assistant spécialisé dans l'extraction d'informations sur des lieux à partir de vidéos YouTube francophones sur le Japon.
@@ -50,24 +51,24 @@ Réponds avec le JSON uniquement, sans markdown ni commentaires :
 def extract_places_from_video(
     video: dict,
     api_key: str | None = None,
-    model: str = "claude-sonnet-4-5-20250929",
+    model: str = "gemini-2.0-flash",
 ) -> list[dict]:
     """
-    Extract place information from a single video using Claude.
+    Extract place information from a single video using Gemini.
 
     Args:
         video: Dict with keys title, description, transcript, url
-        api_key: Anthropic API key (falls back to env var)
-        model: Claude model to use
+        api_key: Gemini API key (falls back to env var)
+        model: Gemini model to use
 
     Returns:
         List of place dicts
     """
-    key = api_key or os.getenv("ANTHROPIC_API_KEY")
+    key = api_key or os.getenv("GEMINI_API_KEY")
     if not key:
-        raise ValueError("ANTHROPIC_API_KEY is required")
+        raise ValueError("GEMINI_API_KEY is required")
 
-    client = anthropic.Anthropic(api_key=key)
+    client = genai.Client(api_key=key)
 
     transcript_text = video.get("transcript") or "(Transcription non disponible)"
     # Truncate very long transcripts to stay within context limits
@@ -80,20 +81,18 @@ def extract_places_from_video(
         transcript=transcript_text,
     )
 
-    message = client.messages.create(
+    response = client.models.generate_content(
         model=model,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
+        contents=prompt,
     )
 
-    response_text = message.content[0].text.strip()
+    response_text = response.text.strip()
 
     # Parse JSON response
     try:
         places = json.loads(response_text)
     except json.JSONDecodeError:
         # Try to extract JSON from the response if it's wrapped in markdown
-        import re
         json_match = re.search(r"\[.*\]", response_text, re.DOTALL)
         if json_match:
             places = json.loads(json_match.group())
@@ -116,7 +115,7 @@ def extract_places_from_video(
 def extract_places_from_videos(
     videos: list[dict],
     api_key: str | None = None,
-    model: str = "claude-sonnet-4-5-20250929",
+    model: str = "gemini-2.0-flash",
     cache_path: str | None = None,
 ) -> list[dict]:
     """
@@ -124,8 +123,8 @@ def extract_places_from_videos(
 
     Args:
         videos: List of video dicts from youtube_scraper
-        api_key: Anthropic API key
-        model: Claude model to use
+        api_key: Gemini API key
+        model: Gemini model to use
         cache_path: Path to cache extracted places
 
     Returns:
@@ -153,15 +152,15 @@ def extract_places_from_videos(
     seen = set()
     unique_places = []
     for place in all_places:
-        key = (place.get("name", "").lower(), place.get("city", "").lower())
-        if key not in seen:
-            seen.add(key)
+        dedup_key = (place.get("name", "").lower(), place.get("city", "").lower())
+        if dedup_key not in seen:
+            seen.add(dedup_key)
             unique_places.append(place)
         else:
             # Merge: keep the one with more info, add video source
             for existing in unique_places:
                 existing_key = (existing.get("name", "").lower(), existing.get("city", "").lower())
-                if existing_key == key:
+                if existing_key == dedup_key:
                     # Add this video as an additional source
                     if "additional_sources" not in existing:
                         existing["additional_sources"] = []

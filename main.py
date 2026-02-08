@@ -54,8 +54,8 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="claude-sonnet-4-5-20250929",
-        help="Claude model to use for extraction",
+        default="gemini-2.0-flash",
+        help="Gemini model to use for extraction (default: gemini-2.0-flash)",
     )
     parser.add_argument(
         "--output-dir",
@@ -85,9 +85,9 @@ def main():
     )
     print(f"\n-> {len(videos)} videos fetched\n")
 
-    # ── Step 2: Extract places using Claude ─────────────────────────
+    # ── Step 2: Extract places using Gemini ─────────────────────────
     print("=" * 60)
-    print("STEP 2: Extracting places with Claude AI")
+    print("STEP 2: Extracting places with Gemini AI")
     print("=" * 60)
 
     places = extract_places_from_videos(
