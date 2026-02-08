@@ -7,7 +7,9 @@ import json
 import time
 from pathlib import Path
 from googleapiclient.discovery import build
+import shutil
 import subprocess
+import sys
 import tempfile
 
 
@@ -109,8 +111,14 @@ def fetch_transcript(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         out_template = os.path.join(tmpdir, "sub")
+        # Find yt-dlp: prefer the one next to the current python (in the venv)
+        yt_dlp_bin = shutil.which("yt-dlp", path=os.path.dirname(sys.executable))
+        if not yt_dlp_bin:
+            yt_dlp_bin = shutil.which("yt-dlp")
+        if not yt_dlp_bin:
+            raise FileNotFoundError("yt-dlp not found. Run: pip install yt-dlp")
         cmd = [
-            "yt-dlp",
+            yt_dlp_bin,
             "--skip-download",
             "--write-subs",
             "--write-auto-subs",
