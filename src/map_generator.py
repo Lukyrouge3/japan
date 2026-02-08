@@ -13,18 +13,23 @@ from geopy.geocoders import Nominatim, GoogleV3
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 
-# Color mapping for place types (KML icon colors)
-TYPE_COLORS = {
-    "restaurant": "ff0000ff",  # Red
-    "café": "ff00aaff",  # Orange
-    "bar": "ff9900ff",  # Purple
-    "temple": "ff00ff00",  # Green
-    "parc": "ff00cc00",  # Dark green
-    "magasin": "ffffff00",  # Yellow
-    "attraction": "ffff00ff",  # Magenta
-    "quartier": "ff888888",  # Gray
-    "hôtel": "ff0066ff",  # Dark orange
-}
+def rating_to_color(rating) -> str:
+    """Convert a 1-10 rating to a KML color (aaBBGGRR format) from red to green."""
+    try:
+        score = int(rating)
+    except (TypeError, ValueError):
+        return "ff888888"  # Gray for unknown
+    score = max(1, min(10, score))
+    # Interpolate from red (1) -> yellow (5) -> green (10)
+    t = (score - 1) / 9  # 0.0 to 1.0
+    if t <= 0.5:
+        # Red to yellow: R=255, G goes 0->255
+        r, g, b = 255, int(255 * (t * 2)), 0
+    else:
+        # Yellow to green: R goes 255->0, G=255
+        r, g, b = int(255 * (1 - (t - 0.5) * 2)), 255, 0
+    # KML color format is aaBBGGRR (alpha, blue, green, red)
+    return f"ff{b:02x}{g:02x}{r:02x}"
 
 # Icon mapping for Google My Maps (when importing KML)
 TYPE_ICONS = {
@@ -221,8 +226,8 @@ def generate_kml(places: list[dict], output_path: str) -> str:
         )
         point.description = build_description(place)
 
-        # Set icon color based on type
-        color = TYPE_COLORS.get(place_type, "ffffffff")
+        # Set icon color based on rating (red=bad, green=great)
+        color = rating_to_color(place.get("rating"))
         point.style.iconstyle.color = color
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
