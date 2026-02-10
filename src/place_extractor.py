@@ -50,7 +50,7 @@ Réponds avec le JSON uniquement, sans markdown ni commentaires :
 def extract_places_from_video(
     video: dict,
     api_key: str | None = None,
-    model: str = "gemini-2.0-flash",
+    model: str = "gemini-2.5-flash",
 ) -> list[dict]:
     """
     Extract place information from a single video using Gemini.
