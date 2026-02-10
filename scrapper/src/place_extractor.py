@@ -5,7 +5,11 @@ Use Google Gemini to extract place information from video descriptions and trans
 import os
 import json
 import re
+import sys
 from google import genai
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from consolidate_types import CANONICAL_TYPES, normalize_type
 
 EXTRACTION_PROMPT = """\
 Tu es un assistant spécialisé dans l'extraction d'informations sur des lieux à partir de vidéos YouTube francophones sur le Japon.
@@ -27,7 +31,35 @@ Analyse ces informations et extrais TOUS les lieux visités (restaurants, cafés
 Pour chaque lieu, donne :
 1. **name** : Le nom du lieu (en japonais si possible, sinon en français/anglais)
 2. **name_fr** : Le nom en français s'il est différent
-3. **type** : Le type de lieu (restaurant, café, temple, parc, magasin, attraction, quartier, hôtel, bar, etc.)
+3. **type** : Le type de lieu. Tu DOIS choisir parmi cette liste exacte :
+   - Restaurant (restaurants, fast food, buffets, sushi, ramen, etc.)
+   - Café/Salon de thé (cafés, salons de thé, cafés à thème, cat cafés)
+   - Bar (bars, lounges, caves à vin)
+   - Boulangerie/Pâtisserie (boulangeries, pâtisseries, glaciers)
+   - Street food (stands de street food, food trucks)
+   - Magasin (boutiques, magasins spécialisés, souvenirs, électronique, vêtements, etc.)
+   - Centre commercial (centres commerciaux, grands magasins, outlets, complexes commerciaux)
+   - Supermarché/Konbini (supermarchés, konbinis, supérettes, épiceries)
+   - Marché (marchés alimentaires, marchés de plein air)
+   - Hébergement (hôtels, auberges, capsule hotels, ryokans, maisons d'hôtes)
+   - Temple (temples bouddhistes, pagodes)
+   - Sanctuaire (sanctuaires shintoïstes)
+   - Musée (musées, galeries d'art, expositions)
+   - Monument (monuments, statues, mémoriaux, ponts, phares, églises, cathédrales)
+   - Site historique (sites historiques, châteaux, ruines, cimetières, bâtiments historiques)
+   - Site naturel (montagnes, volcans, lacs, rivières, forêts, îles, plages, cascades)
+   - Parc/Jardin (parcs, jardins, parcs nationaux)
+   - Onsen/Spa (sources chaudes, bains publics, spas)
+   - Parc d'attractions (parcs d'attractions, parcs à thème, zoos, aquariums)
+   - Divertissement (salles d'arcade, game centers, karaoké, cinémas, stades, théâtres)
+   - Attraction (attractions touristiques, observatoires, tours d'observation, points de vue, trains à thème)
+   - Quartier/Rue (quartiers, rues commerçantes, districts, zones piétonnes)
+   - Ville/Village (villes, villages)
+   - Région (préfectures, régions, provinces, archipels)
+   - Transport (gares, aéroports, arrêts de bus, ports)
+   - Bâtiment (bâtiments notables, gratte-ciels, bureaux, universités)
+   - Lieu abandonné (lieux abandonnés, urbex)
+   - Service (offices de tourisme, locations de voiture, coworking, services publics)
 4. **address** : L'adresse exacte si mentionnée dans la description ou la transcription
 5. **city** : La ville (Tokyo, Osaka, Kyoto, etc.)
 6. **area** : Le quartier si mentionné (Shibuya, Shinjuku, Asakusa, etc.)
@@ -40,7 +72,8 @@ Pour chaque lieu, donne :
 IMPORTANT :
 - N'extrais que les lieux réels et spécifiques, pas les mentions génériques
 - Si l'adresse est dans la description, copie-la exactement
-- Si le lieu est juste mentionné en passant sans vraie recommandation, ne l'inclus pas.
+- Si le lieu est juste mentionné en passant sans vraie recommandation, ne l'inclus pas
+- Le champ "type" DOIT être exactement l'une des 28 valeurs listées ci-dessus, sans modification
 - Réponds UNIQUEMENT en JSON valide, sous forme d'un tableau d'objets
 - Si aucun lieu n'est trouvé, réponds avec un tableau vide []
 
@@ -100,13 +133,21 @@ def extract_places_from_video(
             print(f"  Response: {response_text[:200]}...")
             return []
 
-    # Attach video metadata to each place
+    # Attach video metadata and validate types
     for place in places:
         place["source_video"] = {
             "title": video["title"],
             "url": video.get("url", ""),
             "published_at": video.get("published_at", ""),
         }
+
+        # Auto-correct types that don't match canonical list
+        raw_type = place.get("type", "")
+        if raw_type not in CANONICAL_TYPES:
+            corrected = normalize_type(raw_type)
+            if corrected != raw_type:
+                print(f"  Type corrected: '{raw_type}' → '{corrected}'")
+            place["type"] = corrected
 
     return places
 

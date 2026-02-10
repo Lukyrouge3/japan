@@ -4,7 +4,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Fuunji (風雲児)",
     name_fr: "Fuunji",
-    type: "restaurant",
+    type: "Restaurant",
     address: "〒151-0053 Tokyo, Shibuya City, Yoyogi, 2-14-3",
     city: "Tokyo",
     area: "Shibuya",
@@ -25,7 +25,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Ichiran Shibuya (一蘭)",
     name_fr: "Ichiran",
-    type: "restaurant",
+    type: "Restaurant",
     address: "Shibuya, Tokyo",
     city: "Tokyo",
     area: "Shibuya",
@@ -46,7 +46,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Senso-ji (浅草寺)",
     name_fr: "Temple Senso-ji",
-    type: "temple",
+    type: "Temple",
     address: "2 Chome-3-1 Asakusa, Taito City, Tokyo",
     city: "Tokyo",
     area: "Asakusa",
@@ -67,7 +67,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Fushimi Inari Taisha (伏見稲荷大社)",
     name_fr: "Fushimi Inari",
-    type: "temple",
+    type: "Temple",
     address: "68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto",
     city: "Kyoto",
     area: "Fushimi",
@@ -91,7 +91,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Dotonbori",
     name_fr: "Dotonbori",
-    type: "quartier",
+    type: "Quartier/Rue",
     address: "Dotonbori, Chuo Ward, Osaka",
     city: "Osaka",
     area: "Namba",
@@ -112,7 +112,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Kinkaku-ji (金閣寺)",
     name_fr: "Pavillon d'Or",
-    type: "temple",
+    type: "Temple",
     address: "1 Kinkakujicho, Kita Ward, Kyoto",
     city: "Kyoto",
     area: "Kita",
@@ -133,7 +133,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Tsukiji Outer Market",
     name_fr: "Marché extérieur de Tsukiji",
-    type: "magasin",
+    type: "Marché",
     address: "Tsukiji, Chuo City, Tokyo",
     city: "Tokyo",
     area: "Tsukiji",
@@ -154,7 +154,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Arashiyama Bamboo Grove",
     name_fr: "Forêt de bambous d'Arashiyama",
-    type: "attraction",
+    type: "Site naturel",
     address: "Sagaogurayama Tabuchiyamacho, Ukyo Ward, Kyoto",
     city: "Kyoto",
     area: "Arashiyama",
@@ -175,7 +175,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Gyukatsu Motomura (牛カツもと村)",
     name_fr: "Gyukatsu Motomura",
-    type: "restaurant",
+    type: "Restaurant",
     address: "Shibuya, Tokyo",
     city: "Tokyo",
     area: "Shibuya",
@@ -199,7 +199,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Nara Park (奈良公園)",
     name_fr: "Parc de Nara",
-    type: "parc",
+    type: "Parc/Jardin",
     address: "Nara Park, Nara",
     city: "Nara",
     area: "Centre",
@@ -220,7 +220,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Omoide Yokocho (思い出横丁)",
     name_fr: "Omoide Yokocho",
-    type: "bar",
+    type: "Bar",
     address: "Nishishinjuku 1 Chome, Shinjuku City, Tokyo",
     city: "Tokyo",
     area: "Shinjuku",
@@ -241,7 +241,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Osaka Castle (大阪城)",
     name_fr: "Château d'Osaka",
-    type: "attraction",
+    type: "Site historique",
     address: "1-1 Osakajo, Chuo Ward, Osaka",
     city: "Osaka",
     area: "Chuo",
@@ -262,7 +262,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Meiji Jingu (明治神宮)",
     name_fr: "Sanctuaire Meiji",
-    type: "temple",
+    type: "Sanctuaire",
     address: "1-1 Yoyogikamizonocho, Shibuya City, Tokyo",
     city: "Tokyo",
     area: "Harajuku",
@@ -283,7 +283,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Nakamise-dori",
     name_fr: "Rue Nakamise",
-    type: "magasin",
+    type: "Quartier/Rue",
     address: "1 Chome Asakusa, Taito City, Tokyo",
     city: "Tokyo",
     area: "Asakusa",
@@ -304,7 +304,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Golden Gai",
     name_fr: "Golden Gai",
-    type: "bar",
+    type: "Bar",
     address: "Kabukicho 1 Chome, Shinjuku City, Tokyo",
     city: "Tokyo",
     area: "Shinjuku",
@@ -327,7 +327,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Kuromon Market (黒門市場)",
     name_fr: "Marché Kuromon",
-    type: "magasin",
+    type: "Marché",
     address: "Nipponbashi, Chuo Ward, Osaka",
     city: "Osaka",
     area: "Namba",
@@ -348,7 +348,7 @@ export const samplePlaces: Place[] = [
   {
     name: "TeamLab Borderless",
     name_fr: "TeamLab Borderless",
-    type: "attraction",
+    type: "Musée",
     address: "Azabudai Hills, Minato City, Tokyo",
     city: "Tokyo",
     area: "Azabudai",
@@ -369,7 +369,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Gion District",
     name_fr: "Quartier de Gion",
-    type: "quartier",
+    type: "Quartier/Rue",
     address: "Gion, Higashiyama Ward, Kyoto",
     city: "Kyoto",
     area: "Higashiyama",
@@ -390,7 +390,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Afuri (阿夫利)",
     name_fr: "Afuri",
-    type: "restaurant",
+    type: "Restaurant",
     address: "Ebisu, Shibuya City, Tokyo",
     city: "Tokyo",
     area: "Ebisu",
@@ -410,7 +410,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Café Kitsune",
     name_fr: "Café Kitsune",
-    type: "café",
+    type: "Café/Salon de thé",
     address: "Minami-Aoyama, Minato City, Tokyo",
     city: "Tokyo",
     area: "Aoyama",
@@ -431,7 +431,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Miyajima Island (宮島)",
     name_fr: "Île de Miyajima",
-    type: "attraction",
+    type: "Site naturel",
     address: "Miyajima, Hatsukaichi, Hiroshima",
     city: "Hiroshima",
     area: "Miyajima",
@@ -455,7 +455,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Steak Aohige (ステーキ青ひげ)",
     name_fr: "Steak Aohige",
-    type: "restaurant",
+    type: "Restaurant",
     address: "Namba, Chuo Ward, Osaka",
     city: "Osaka",
     area: "Namba",
@@ -475,7 +475,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Robot Restaurant",
     name_fr: "Robot Restaurant",
-    type: "attraction",
+    type: "Divertissement",
     address: "Kabukicho, Shinjuku City, Tokyo",
     city: "Tokyo",
     area: "Shinjuku",
@@ -495,7 +495,7 @@ export const samplePlaces: Place[] = [
   {
     name: "Naoshima Art Island",
     name_fr: "Île de Naoshima",
-    type: "attraction",
+    type: "Musée",
     address: "Naoshima, Kagawa Prefecture",
     city: "Naoshima",
     area: "Centre",

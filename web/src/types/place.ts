@@ -4,10 +4,43 @@ export interface SourceVideo {
   published_at?: string;
 }
 
+export const PLACE_TYPES = [
+  "Restaurant",
+  "Café/Salon de thé",
+  "Bar",
+  "Boulangerie/Pâtisserie",
+  "Street food",
+  "Magasin",
+  "Centre commercial",
+  "Supermarché/Konbini",
+  "Marché",
+  "Hébergement",
+  "Temple",
+  "Sanctuaire",
+  "Musée",
+  "Monument",
+  "Site historique",
+  "Site naturel",
+  "Parc/Jardin",
+  "Onsen/Spa",
+  "Parc d'attractions",
+  "Divertissement",
+  "Attraction",
+  "Quartier/Rue",
+  "Ville/Village",
+  "Région",
+  "Transport",
+  "Bâtiment",
+  "Lieu abandonné",
+  "Service",
+] as const;
+
+export type PlaceType = (typeof PLACE_TYPES)[number];
+
 export interface Place {
   name: string;
   name_fr?: string;
-  type: string;
+  type: PlaceType | string;
   address?: string | null;
   city?: string | null;
   area?: string | null;
